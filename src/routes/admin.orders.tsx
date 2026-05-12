@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type Order = { id: string; user_id: string; total_amount: number; order_status: string; payment_status: string; created_at: string };
+type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+type Order = { id: string; user_id: string; total_amount: number; order_status: OrderStatus; payment_status: string; created_at: string };
 const STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"] as const;
 
 export const Route = createFileRoute("/admin/orders")({
@@ -16,13 +17,13 @@ function OrdersAdmin() {
 
   const load = () => {
     let q = supabase.from("orders").select("*").order("created_at", { ascending: false });
-    if (filter !== "all") q = q.eq("order_status", filter as Order["order_status"]);
+    if (filter !== "all") q = q.eq("order_status", filter as OrderStatus);
     q.then(({ data }) => setList((data ?? []) as Order[]));
   };
   useEffect(() => { load(); }, [filter]);
 
   const update = async (id: string, status: string) => {
-    const { error } = await supabase.from("orders").update({ order_status: status as Order["order_status"] }).eq("id", id);
+    const { error } = await supabase.from("orders").update({ order_status: status as OrderStatus }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Updated"); load(); }
   };
 
