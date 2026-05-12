@@ -8,6 +8,9 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/store/auth";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -110,10 +113,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const init = useAuth((s) => s.init);
+  useEffect(() => { init(); }, [init]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <Toaster />
     </QueryClientProvider>
   );
 }
