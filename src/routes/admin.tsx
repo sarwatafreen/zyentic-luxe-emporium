@@ -8,12 +8,18 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, refreshRole } = useAuth();
 
   useEffect(() => {
     if (loading) return;
     if (!user && typeof window !== "undefined") window.location.href = "/login";
   }, [user, loading]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (role === "admin") return;
+    void refreshRole(user.id);
+  }, [user, role, refreshRole]);
 
   if (loading || !user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   if (role !== "admin") {
