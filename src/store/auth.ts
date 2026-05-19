@@ -8,6 +8,7 @@ type AuthState = {
   role: "admin" | "customer" | null;
   loading: boolean;
   init: () => void;
+  refreshRole: (userId?: string) => Promise<"admin" | "customer" | null>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
@@ -17,10 +18,14 @@ type AuthState = {
 let initialized = false;
 
 async function loadRole(userId: string): Promise<"admin" | "customer" | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId);
+  if (error) {
+    console.error("Failed to load user role", error);
+    return null;
+  }
   if (!data?.length) return null;
   return data.some((r) => r.role === "admin") ? "admin" : "customer";
 }
@@ -41,10 +46,10 @@ export const useAuth = create<AuthState>((set, get) => ({
         // defer to avoid deadlock per supabase docs
         setTimeout(async () => {
           const role = await loadRole(session.user.id);
-          set({ role });
+          set({ role, loading: false });
         }, 0);
       } else {
-        set({ role: null });
+        set({ role: null, loading: false });
       }
     });
 
@@ -56,6 +61,19 @@ export const useAuth = create<AuthState>((set, get) => ({
       }
       set({ loading: false });
     });
+  },
+
+  refreshRole: async (userId) => {
+    const activeUserId = userId ?? get().user?.id;
+    if (!activeUserId) {
+      set({ role: null, loading: false });
+      return null;
+    }
+
+    set({ loading: true });
+    const role = await loadRole(activeUserId);
+    set({ role, loading: false });
+    return role;
   },
 
   signIn: async (email, password) => {
