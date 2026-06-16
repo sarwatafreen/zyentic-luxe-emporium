@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Heart, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAsset } from "@/lib/asset-resolver";
+import { useCart } from "@/store/cart";
+import { useWishlist } from "@/store/wishlist";
 
 type Product = {
   id: string; title: string; slug: string; price: number; discount_price: number | null;
@@ -21,6 +25,8 @@ function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cats, setCats] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const addToCart = useCart((s) => s.add);
+  const wish = useWishlist();
 
   useEffect(() => {
     supabase.from("categories").select("name,slug").then(({ data }) => setCats(data ?? []));
@@ -66,22 +72,48 @@ function ShopPage() {
             <p className="text-center text-muted-foreground py-20">No products found.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7">
-              {products.map((p, i) => (
-                <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <Link to="/shop/$slug" params={{ slug: p.slug }} className="group block">
-                    <div className="relative aspect-[3/4] border border-foreground overflow-hidden">
-                      <img src={resolveAsset(p.image_urls[0])} alt={p.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover img-zoom" />
+              {products.map((p, i) => {
+                const img = resolveAsset(p.image_urls[0]);
+                const hover = resolveAsset(p.image_urls[1] ?? p.image_urls[0]);
+                const inWish = wish.has(p.id);
+                return (
+                  <motion.article key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="group">
+                    <div className="relative aspect-[3/4] border border-foreground overflow-hidden bg-muted">
+                      <Link to="/shop/$slug" params={{ slug: p.slug }} className="block absolute inset-0">
+                        <img src={img} alt={p.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 group-hover:opacity-0" />
+                        <img src={hover} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
+                      </Link>
+                      <button
+                        aria-label="Wishlist"
+                        onClick={(e) => { e.preventDefault(); wish.toggle({ product_id: p.id, title: p.title, price: p.price, image: img, slug: p.slug }); }}
+                        className={`absolute top-3 right-3 w-9 h-9 border border-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-500 ${inWish ? "bg-foreground text-background" : "bg-background hover:bg-foreground hover:text-background"}`}
+                      >
+                        <Heart size={14} strokeWidth={1.5} fill={inWish ? "currentColor" : "none"} />
+                      </button>
+                      <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            addToCart({ product_id: p.id, title: p.title, price: p.discount_price ?? p.price, image: img, quantity: 1 });
+                            toast.success(`Added ${p.title}`);
+                          }}
+                          className="w-full bg-foreground text-background py-3 text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-background hover:text-foreground border border-foreground transition-colors"
+                        >
+                          <ShoppingBag size={12} strokeWidth={1.5} />
+                          Add to Cart
+                        </button>
+                      </div>
                     </div>
                     <div className="mt-4 flex items-start justify-between gap-3">
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-1">{p.category?.name}</p>
-                        <h3 className="font-display text-lg">{p.title}</h3>
+                        <Link to="/shop/$slug" params={{ slug: p.slug }} className="font-display text-lg leading-tight hover:underline">{p.title}</Link>
                       </div>
-                      <p className="font-display text-lg">${p.discount_price ?? p.price}</p>
+                      <p className="font-display text-lg whitespace-nowrap">${p.discount_price ?? p.price}</p>
                     </div>
-                  </Link>
-                </motion.div>
-              ))}
+                  </motion.article>
+                );
+              })}
             </div>
           )}
         </div>
