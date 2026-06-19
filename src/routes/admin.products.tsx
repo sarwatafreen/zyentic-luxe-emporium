@@ -56,7 +56,7 @@ function ProductsAdmin() {
       trending: form.trending,
       featured: form.featured,
       category_id: form.category_id || null,
-      image_urls: form.image_url ? [form.image_url] : [],
+      image_urls: form.image_urls,
       description: form.description,
     };
     const { error } = editing
