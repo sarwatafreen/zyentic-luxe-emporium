@@ -18,7 +18,8 @@ function ProductsAdmin() {
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_url: "", description: "" });
+  const [form, setForm] = useState({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_urls: [] as string[], description: "" });
+  const [uploading, setUploading] = useState(false);
 
   const load = () => supabase.from("products").select("*").order("created_at", { ascending: false }).then(({ data }) => setList((data ?? []) as Product[]));
   useEffect(() => {
@@ -26,8 +27,25 @@ function ProductsAdmin() {
     supabase.from("categories").select("id,name").then(({ data }) => setCats(data ?? []));
   }, []);
 
-  const openNew = () => { setEditing(null); setForm({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_url: "", description: "" }); setOpen(true); };
-  const openEdit = (p: Product) => { setEditing(p); setForm({ title: p.title, price: p.price, stock: p.stock, category_id: p.category_id ?? "", trending: p.trending, featured: p.featured, image_url: p.image_urls[0] ?? "", description: "" }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_urls: [], description: "" }); setOpen(true); };
+  const openEdit = (p: Product) => { setEditing(p); setForm({ title: p.title, price: p.price, stock: p.stock, category_id: p.category_id ?? "", trending: p.trending, featured: p.featured, image_urls: p.image_urls ?? [], description: "" }); setOpen(true); };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setUploading(true);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file);
+      if (error) { toast.error(error.message); continue; }
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      urls.push(data.publicUrl);
+    }
+    setForm((f) => ({ ...f, image_urls: [...f.image_urls, ...urls] }));
+    setUploading(false);
+  };
+
+  const removeImage = (i: number) => setForm((f) => ({ ...f, image_urls: f.image_urls.filter((_, idx) => idx !== i) }));
 
   const save = async () => {
     const payload = {
