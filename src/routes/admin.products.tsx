@@ -125,7 +125,37 @@ function ProductsAdmin() {
               <option value="">— Category —</option>
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <input placeholder="Image URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full border border-foreground px-3 py-2 text-sm" />
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.2em]">Images</p>
+              {form.image_urls.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {form.image_urls.map((u, i) => (
+                    <div key={i} className="relative group aspect-square border border-foreground/30 overflow-hidden">
+                      <img src={resolveAsset(u)} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removeImage(i)} aria-label="Remove" className="absolute top-1 right-1 bg-foreground text-background p-1 opacity-0 group-hover:opacity-100 transition">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="flex items-center justify-center gap-2 border border-dashed border-foreground py-3 text-xs uppercase tracking-[0.2em] cursor-pointer hover:bg-foreground hover:text-background transition">
+                <Upload size={14} /> {uploading ? "Uploading…" : "Upload Images"}
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
+              </label>
+              <input
+                placeholder="Or paste image URL and press Enter"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                    e.preventDefault();
+                    const v = e.currentTarget.value.trim();
+                    setForm((f) => ({ ...f, image_urls: [...f.image_urls, v] }));
+                    e.currentTarget.value = "";
+                  }
+                }}
+                className="w-full border border-foreground px-3 py-2 text-sm"
+              />
+            </div>
             <div className="flex gap-4 text-xs uppercase tracking-[0.2em]">
               <label className="flex items-center gap-2"><input type="checkbox" checked={form.trending} onChange={(e) => setForm({ ...form, trending: e.target.checked })} /> Trending</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} /> Featured</label>
