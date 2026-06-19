@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, X, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAsset } from "@/lib/asset-resolver";
@@ -18,7 +18,8 @@ function ProductsAdmin() {
   const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_url: "", description: "" });
+  const [form, setForm] = useState({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_urls: [] as string[], description: "" });
+  const [uploading, setUploading] = useState(false);
 
   const load = () => supabase.from("products").select("*").order("created_at", { ascending: false }).then(({ data }) => setList((data ?? []) as Product[]));
   useEffect(() => {
@@ -26,8 +27,25 @@ function ProductsAdmin() {
     supabase.from("categories").select("id,name").then(({ data }) => setCats(data ?? []));
   }, []);
 
-  const openNew = () => { setEditing(null); setForm({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_url: "", description: "" }); setOpen(true); };
-  const openEdit = (p: Product) => { setEditing(p); setForm({ title: p.title, price: p.price, stock: p.stock, category_id: p.category_id ?? "", trending: p.trending, featured: p.featured, image_url: p.image_urls[0] ?? "", description: "" }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ title: "", price: 0, stock: 0, category_id: "", trending: false, featured: false, image_urls: [], description: "" }); setOpen(true); };
+  const openEdit = (p: Product) => { setEditing(p); setForm({ title: p.title, price: p.price, stock: p.stock, category_id: p.category_id ?? "", trending: p.trending, featured: p.featured, image_urls: p.image_urls ?? [], description: "" }); setOpen(true); };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setUploading(true);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file);
+      if (error) { toast.error(error.message); continue; }
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      urls.push(data.publicUrl);
+    }
+    setForm((f) => ({ ...f, image_urls: [...f.image_urls, ...urls] }));
+    setUploading(false);
+  };
+
+  const removeImage = (i: number) => setForm((f) => ({ ...f, image_urls: f.image_urls.filter((_, idx) => idx !== i) }));
 
   const save = async () => {
     const payload = {
@@ -38,7 +56,7 @@ function ProductsAdmin() {
       trending: form.trending,
       featured: form.featured,
       category_id: form.category_id || null,
-      image_urls: form.image_url ? [form.image_url] : [],
+      image_urls: form.image_urls,
       description: form.description,
     };
     const { error } = editing
@@ -107,7 +125,37 @@ function ProductsAdmin() {
               <option value="">— Category —</option>
               {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <input placeholder="Image URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full border border-foreground px-3 py-2 text-sm" />
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.2em]">Images</p>
+              {form.image_urls.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {form.image_urls.map((u, i) => (
+                    <div key={i} className="relative group aspect-square border border-foreground/30 overflow-hidden">
+                      <img src={resolveAsset(u)} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removeImage(i)} aria-label="Remove" className="absolute top-1 right-1 bg-foreground text-background p-1 opacity-0 group-hover:opacity-100 transition">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="flex items-center justify-center gap-2 border border-dashed border-foreground py-3 text-xs uppercase tracking-[0.2em] cursor-pointer hover:bg-foreground hover:text-background transition">
+                <Upload size={14} /> {uploading ? "Uploading…" : "Upload Images"}
+                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
+              </label>
+              <input
+                placeholder="Or paste image URL and press Enter"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                    e.preventDefault();
+                    const v = e.currentTarget.value.trim();
+                    setForm((f) => ({ ...f, image_urls: [...f.image_urls, v] }));
+                    e.currentTarget.value = "";
+                  }
+                }}
+                className="w-full border border-foreground px-3 py-2 text-sm"
+              />
+            </div>
             <div className="flex gap-4 text-xs uppercase tracking-[0.2em]">
               <label className="flex items-center gap-2"><input type="checkbox" checked={form.trending} onChange={(e) => setForm({ ...form, trending: e.target.checked })} /> Trending</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} /> Featured</label>
