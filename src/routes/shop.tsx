@@ -85,8 +85,14 @@ function ShopPage() {
                       </Link>
                       <button
                         aria-label="Wishlist"
-                        onClick={(e) => { e.preventDefault(); wish.toggle({ product_id: p.id, title: p.title, price: p.price, image: img, slug: p.slug }); }}
-                        className={`absolute top-3 right-3 w-9 h-9 border border-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-500 ${inWish ? "bg-foreground text-background" : "bg-background hover:bg-foreground hover:text-background"}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const was = wish.has(p.id);
+                          wish.toggle({ product_id: p.id, title: p.title, price: p.price, image: img, slug: p.slug });
+                          toast.success(was ? `Removed ${p.title} from wishlist` : `Added ${p.title} to wishlist`);
+                        }}
+                        className={`absolute top-3 right-3 z-10 w-9 h-9 border border-foreground flex items-center justify-center transition-all duration-300 ${inWish ? "bg-foreground text-background" : "bg-background hover:bg-foreground hover:text-background"}`}
                       >
                         <Heart size={14} strokeWidth={1.5} fill={inWish ? "currentColor" : "none"} />
                       </button>
