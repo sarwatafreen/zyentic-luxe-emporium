@@ -119,6 +119,7 @@ export function Trending() {
           </motion.div>
         </AnimatePresence>
       </div>
+      <QuickViewDialog slug={quickSlug} open={!!quickSlug} onOpenChange={(o) => !o && setQuickSlug(null)} />
     </section>
   );
 }

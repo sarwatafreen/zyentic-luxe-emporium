@@ -137,6 +137,7 @@ function ShopPage() {
           )}
         </div>
       </section>
+      <QuickViewDialog slug={quickSlug} open={!!quickSlug} onOpenChange={(o) => !o && setQuickSlug(null)} />
     </SiteLayout>
   );
 }
