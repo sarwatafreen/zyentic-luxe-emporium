@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Eye, Heart, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
+import { QuickViewDialog } from "@/components/site/QuickViewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAsset } from "@/lib/asset-resolver";
 import { useCart } from "@/store/cart";
@@ -21,6 +22,7 @@ type Product = {
 export function Trending() {
   const [products, setProducts] = useState<Product[]>([]);
   const [tab, setTab] = useState("All");
+  const [quickSlug, setQuickSlug] = useState<string | null>(null);
   const addToCart = useCart((s) => s.add);
   const wish = useWishlist();
 
@@ -67,6 +69,17 @@ export function Trending() {
                       <img src={hover} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
                     </Link>
                     <button
+                      aria-label="Quick View"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setQuickSlug(p.slug);
+                      }}
+                      className="absolute top-3 left-3 z-10 w-9 h-9 border border-foreground bg-background hover:bg-foreground hover:text-background transition flex items-center justify-center"
+                    >
+                      <Eye size={14} strokeWidth={1.5} />
+                    </button>
+                    <button
                       aria-label="Wishlist"
                       onClick={(e) => {
                         e.preventDefault();
@@ -106,6 +119,7 @@ export function Trending() {
           </motion.div>
         </AnimatePresence>
       </div>
+      <QuickViewDialog slug={quickSlug} open={!!quickSlug} onOpenChange={(o) => !o && setQuickSlug(null)} />
     </section>
   );
 }

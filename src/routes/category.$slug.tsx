@@ -1,9 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Eye, Heart, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { QuickViewDialog } from "@/components/site/QuickViewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAsset } from "@/lib/asset-resolver";
 import { useCart } from "@/store/cart";
@@ -32,6 +33,7 @@ function CategoryPage() {
   const [otherCats, setOtherCats] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFoundCat, setNotFoundCat] = useState(false);
+  const [quickSlug, setQuickSlug] = useState<string | null>(null);
   const addToCart = useCart((s) => s.add);
   const wish = useWishlist();
 
@@ -130,6 +132,17 @@ function CategoryPage() {
                         <img src={hover} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
                       </Link>
                       <button
+                        aria-label="Quick View"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setQuickSlug(p.slug);
+                        }}
+                        className="absolute top-3 left-3 z-10 w-9 h-9 border border-foreground bg-background hover:bg-foreground hover:text-background transition flex items-center justify-center"
+                      >
+                        <Eye size={14} strokeWidth={1.5} />
+                      </button>
+                      <button
                         aria-label="Wishlist"
                         onClick={(e) => {
                           e.preventDefault();
@@ -170,6 +183,7 @@ function CategoryPage() {
           )}
         </div>
       </section>
+      <QuickViewDialog slug={quickSlug} open={!!quickSlug} onOpenChange={(o) => !o && setQuickSlug(null)} />
     </SiteLayout>
   );
 }
