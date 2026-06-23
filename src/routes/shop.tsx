@@ -86,6 +86,17 @@ function ShopPage() {
                         <img src={hover} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
                       </Link>
                       <button
+                        aria-label="Quick View"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setQuickSlug(p.slug);
+                        }}
+                        className="absolute top-3 left-3 z-10 w-9 h-9 border border-foreground bg-background hover:bg-foreground hover:text-background transition flex items-center justify-center"
+                      >
+                        <Eye size={14} strokeWidth={1.5} />
+                      </button>
+                      <button
                         aria-label="Wishlist"
                         onClick={(e) => {
                           e.preventDefault();
