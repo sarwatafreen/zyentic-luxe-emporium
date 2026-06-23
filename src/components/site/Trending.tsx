@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { Eye, Heart, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
+import { QuickViewDialog } from "@/components/site/QuickViewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAsset } from "@/lib/asset-resolver";
 import { useCart } from "@/store/cart";

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Eye, Heart, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import { QuickViewDialog } from "@/components/site/QuickViewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAsset } from "@/lib/asset-resolver";
 import { useCart } from "@/store/cart";
