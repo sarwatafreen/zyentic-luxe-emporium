@@ -22,6 +22,7 @@ type Product = {
 export function Trending() {
   const [products, setProducts] = useState<Product[]>([]);
   const [tab, setTab] = useState("All");
+  const [quickSlug, setQuickSlug] = useState<string | null>(null);
   const addToCart = useCart((s) => s.add);
   const wish = useWishlist();
 

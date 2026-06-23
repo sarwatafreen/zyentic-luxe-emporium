@@ -33,6 +33,7 @@ function CategoryPage() {
   const [otherCats, setOtherCats] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFoundCat, setNotFoundCat] = useState(false);
+  const [quickSlug, setQuickSlug] = useState<string | null>(null);
   const addToCart = useCart((s) => s.add);
   const wish = useWishlist();
 

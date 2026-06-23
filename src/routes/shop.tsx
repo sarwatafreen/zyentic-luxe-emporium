@@ -26,6 +26,7 @@ function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cats, setCats] = useState<{ name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quickSlug, setQuickSlug] = useState<string | null>(null);
   const addToCart = useCart((s) => s.add);
   const wish = useWishlist();
 
